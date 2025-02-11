@@ -7,6 +7,8 @@ contract Raffle {
     uint256 private immutable I_TICKET_PRICE;
     address payable[] private s_players;
 
+    event Enter(address indexed player);
+
     constructor(uint256 _ticketPrice) {
         I_TICKET_PRICE = _ticketPrice;
     }
@@ -15,6 +17,8 @@ contract Raffle {
         if (msg.value < I_TICKET_PRICE) revert Raffle__NotEnoughValueEntered();
 
         s_players.push(payable(msg.sender));
+
+        emit Enter(msg.sender);
     }
 
     function getTicketPrice() public view returns (uint256) {

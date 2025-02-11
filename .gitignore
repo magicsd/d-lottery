@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+/artifacts/
+/cache/
+/typechain-types/
+gas-report.txt
+deployments
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
