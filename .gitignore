@@ -12,9 +12,9 @@ dist
 dist-ssr
 *.local
 
-/artifacts/
-/cache/
-/typechain-types/
+artifacts/
+cache/
+typechain-types/
 gas-report.txt
 deployments
 
