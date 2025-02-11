@@ -32,5 +32,11 @@ describe('Raffle', async () => {
 
       expect(player).to.equal(deployer)
     })
+
+    it('emits Enter when account enters', async () => {
+      const tx = raffle.enter({ value: getAmount(1) })
+
+      await expect(tx).to.emit(raffle, 'Enter').withArgs(deployer)
+    })
   })
 })
