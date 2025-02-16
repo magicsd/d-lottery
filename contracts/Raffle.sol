@@ -6,21 +6,24 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBa
 
     error Raffle__NotEnoughValueEntered();
     error Raffle__NotOwner();
+    error Raffle__TransferFailed();
 
 contract Raffle is VRFConsumerBaseV2 {
     uint256 private immutable I_TICKET_PRICE;
     address private immutable I_OWNER;
     address payable[] private s_players;
+    VRFCoordinatorV2Interface private immutable I_COORDINATOR;
     bytes32 private immutable I_GAS_LANE;
     uint64 private immutable I_SUBSCRIPTION_ID;
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private immutable I_CALLBACK_GAS_LIMIT;
     uint32 private constant NUM_WORDS = 1;
 
-    VRFCoordinatorV2Interface private immutable I_COORDINATOR;
+    address private s_recentWinner;
 
     event Enter(address indexed player);
     event RequestedRaffleWinner(uint256 indexed requestId);
+    event WinnerPicked(address indexed winner);
 
     modifier onlyOwner() {
         if (msg.sender != I_OWNER) revert Raffle__NotOwner();
@@ -62,8 +65,19 @@ contract Raffle is VRFConsumerBaseV2 {
         emit RequestedRaffleWinner(requestId);
     }
 
-    function fulfillRandomWords(uint256 _requestId, uint256[] memory _randomWords) internal override {
+    function fulfillRandomWords(
+        uint256, /* _requestId, */
+        uint256[] memory _randomWords
+    ) internal override {
+        uint256 winnerIndex = _randomWords[0] % s_players.length;
+        address payable recentWinner = s_players[winnerIndex];
+        s_recentWinner = recentWinner;
 
+        (bool isSuccess,) = recentWinner.call{value: address(this).balance}('');
+
+        if (!isSuccess) revert Raffle__TransferFailed();
+
+        emit WinnerPicked(recentWinner);
     }
 
     function getTicketPrice() public view returns (uint256) {
@@ -72,5 +86,9 @@ contract Raffle is VRFConsumerBaseV2 {
 
     function getPlayer(uint256 _index) public view returns (address) {
         return s_players[_index];
+    }
+
+    function getRecentWinner() public view returns (address) {
+        return s_recentWinner;
     }
 }
