@@ -1,5 +1,3 @@
-import { ethers } from 'hardhat'
-
 export type ChainId = number
 
 export type DevelopmentNetworkName = 'hardhat' | 'localhost'
@@ -26,7 +24,7 @@ type NetworkConfig = {
   name: NetworkName
   rpcUrl?: string
   vrfCoordinatorV2: string
-  ticketPrice: BigInt
+  ticketPrice: string
   keyHash: string
   callbackGasLimit: string
   interval: string
@@ -36,7 +34,7 @@ export const networkConfig: Record<ChainId, NetworkConfig> = {
   [networks.hardhat.chainId]: {
     name: 'hardhat',
     vrfCoordinatorV2: '',
-    ticketPrice: ethers.parseEther('0.01'),
+    ticketPrice: 1e16.toString(),
     keyHash: '',
     callbackGasLimit: '500000',
     interval: '30',
@@ -44,7 +42,7 @@ export const networkConfig: Record<ChainId, NetworkConfig> = {
   [networks.sepolia.chainId]: {
     name: 'sepolia',
     vrfCoordinatorV2: '0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B',
-    ticketPrice: ethers.parseEther('0.01'),
+    ticketPrice: 1e16.toString(),
     keyHash: '0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae',
     callbackGasLimit: '500000',
     interval: '30',
