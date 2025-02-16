@@ -9,6 +9,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
     error Raffle__NotOwner();
     error Raffle__TransferFailed();
     error Raffle__RaffleClosed();
+    error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 playersCount, uint256 raffleState);
 
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     enum RaffleState {Open, Calculating}
@@ -65,7 +66,28 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         emit Enter(msg.sender);
     }
 
-    function requestRandomWinner() external onlyOwner {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    ) public view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+        bool isOpen = s_raffleState == RaffleState.Open;
+        bool isTimePassed = (block.timestamp - s_lastTimestamp) > I_INTERVAL;
+        bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
+
+        upkeepNeeded = isOpen && isTimePassed && hasPlayers && hasBalance;
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external override onlyOwner {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+
+        if (!upkeepNeeded) {
+            revert Raffle__UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
+
         s_raffleState = RaffleState.Calculating;
 
         uint256 requestId = I_COORDINATOR.requestRandomWords(
@@ -79,19 +101,6 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         emit RequestedRaffleWinner(requestId);
     }
 
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    ) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
-        bool isOpen = s_raffleState == RaffleState.Open;
-        bool isTimePassed = (block.timestamp - s_lastTimestamp) > I_INTERVAL;
-        bool hasPlayers = s_players.length > 0;
-        bool hasBalance = address(this).balance > 0;
-
-        upkeepNeeded = isOpen && isTimePassed && hasPlayers && hasBalance;
-    }
-
-    function performUpkeep(bytes calldata /* p erformData */) external override {}
-
     function fulfillRandomWords(
         uint256, /* _requestId, */
         uint256[] memory _randomWords
@@ -101,8 +110,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         s_recentWinner = recentWinner;
 
         s_raffleState = RaffleState.Open;
-
         s_players = new address payable[](0);
+        s_lastTimestamp = block.timestamp;
 
         (bool isSuccess,) = recentWinner.call{value: address(this).balance}('');
 
