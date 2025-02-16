@@ -11,7 +11,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
     error Raffle__RaffleClosed();
 
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
-    enum RaffleState { Open, Calculating }
+    enum RaffleState {Open, Calculating}
 
     uint256 private immutable I_TICKET_PRICE;
     address private immutable I_OWNER;
@@ -25,6 +25,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     address private s_recentWinner;
     RaffleState private s_raffleState;
+    uint256 private s_lastTimestamp;
+    uint256 private immutable I_INTERVAL;
 
     event Enter(address indexed player);
     event RequestedRaffleWinner(uint256 indexed requestId);
@@ -40,7 +42,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         uint256 _ticketPrice,
         bytes32 _gasLane,
         uint64 _subscriptionId,
-        uint32 _callbackGasLimit
+        uint32 _callbackGasLimit,
+        uint256 _interval
     ) VRFConsumerBaseV2(_vrfCoordinatorV2) {
         I_TICKET_PRICE = _ticketPrice;
         I_OWNER = msg.sender;
@@ -49,6 +52,8 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         I_SUBSCRIPTION_ID = _subscriptionId;
         I_CALLBACK_GAS_LIMIT = _callbackGasLimit;
         s_raffleState = RaffleState.Open;
+        s_lastTimestamp = block.timestamp;
+        I_INTERVAL = _interval;
     }
 
     function enter() public payable {
@@ -74,15 +79,18 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         emit RequestedRaffleWinner(requestId);
     }
 
-    function checkUpKeep(
+    function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+        bool isOpen = s_raffleState == RaffleState.Open;
+        bool isTimePassed = (block.timestamp - s_lastTimestamp) > I_INTERVAL;
+        bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
 
+        upkeepNeeded = isOpen && isTimePassed && hasPlayers && hasBalance;
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
-
-    }
+    function performUpkeep(bytes calldata /* p erformData */) external override {}
 
     function fulfillRandomWords(
         uint256, /* _requestId, */

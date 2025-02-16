@@ -22,8 +22,9 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
   const gasLane = ''
   const subscriptionId = process.env.VRF_SUBSCRIPTION_ID
   const callbackGasLimit = ''
+  const interval = ''
 
-  const args = [vrfCoordinatorV2, ticketPrice, gasLane, subscriptionId, callbackGasLimit]
+  const args = [vrfCoordinatorV2, ticketPrice, gasLane, subscriptionId, callbackGasLimit, interval]
 
   await deploy('Raffle', { from: deployer, log: true, args })
 }
