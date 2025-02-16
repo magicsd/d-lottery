@@ -11,6 +11,11 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/autom
     error Raffle__RaffleClosed();
     error Raffle__UpkeepNotNeeded(uint256 currentBalance, uint256 playersCount, uint256 raffleState);
 
+/** @title A sample Raffle Contract
+* @author Aleksandr Dus
+* @notice This contract is for creating a sample raffle contract.
+* @dev This implements Chainlink VRF and Chainlink Automation interfaces.
+*/
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     enum RaffleState {Open, Calculating}
 
@@ -130,5 +135,25 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getRecentWinner() public view returns (address) {
         return s_recentWinner;
+    }
+
+    function getRaffleState() public view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getWordsCount() public pure returns (uint256) {
+        return NUM_WORDS;
+    }
+
+    function getNumberOfPlayers() public view returns (uint256) {
+        return s_players.length;
+    }
+
+    function getLatestTimestamp() public view returns (uint256) {
+        return s_lastTimestamp;
+    }
+
+    function getRequestConfirmations() public pure returns (uint16) {
+        return REQUEST_CONFIRMATIONS;
     }
 }
