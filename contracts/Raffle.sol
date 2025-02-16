@@ -3,12 +3,16 @@ pragma solidity ^0.8.24;
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/AutomationCompatible.sol";
 
     error Raffle__NotEnoughValueEntered();
     error Raffle__NotOwner();
     error Raffle__TransferFailed();
+    error Raffle__RaffleClosed();
 
-contract Raffle is VRFConsumerBaseV2 {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
+    enum RaffleState { Open, Calculating }
+
     uint256 private immutable I_TICKET_PRICE;
     address private immutable I_OWNER;
     address payable[] private s_players;
@@ -20,6 +24,7 @@ contract Raffle is VRFConsumerBaseV2 {
     uint32 private constant NUM_WORDS = 1;
 
     address private s_recentWinner;
+    RaffleState private s_raffleState;
 
     event Enter(address indexed player);
     event RequestedRaffleWinner(uint256 indexed requestId);
@@ -43,9 +48,11 @@ contract Raffle is VRFConsumerBaseV2 {
         I_GAS_LANE = _gasLane;
         I_SUBSCRIPTION_ID = _subscriptionId;
         I_CALLBACK_GAS_LIMIT = _callbackGasLimit;
+        s_raffleState = RaffleState.Open;
     }
 
     function enter() public payable {
+        if (s_raffleState != RaffleState.Open) revert Raffle__RaffleClosed();
         if (msg.value < I_TICKET_PRICE) revert Raffle__NotEnoughValueEntered();
 
         s_players.push(payable(msg.sender));
@@ -54,6 +61,8 @@ contract Raffle is VRFConsumerBaseV2 {
     }
 
     function requestRandomWinner() external onlyOwner {
+        s_raffleState = RaffleState.Calculating;
+
         uint256 requestId = I_COORDINATOR.requestRandomWords(
             I_GAS_LANE,
             I_SUBSCRIPTION_ID,
@@ -65,6 +74,16 @@ contract Raffle is VRFConsumerBaseV2 {
         emit RequestedRaffleWinner(requestId);
     }
 
+    function checkUpKeep(
+        bytes calldata /* checkData */
+    ) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external override {
+
+    }
+
     function fulfillRandomWords(
         uint256, /* _requestId, */
         uint256[] memory _randomWords
@@ -72,6 +91,10 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 winnerIndex = _randomWords[0] % s_players.length;
         address payable recentWinner = s_players[winnerIndex];
         s_recentWinner = recentWinner;
+
+        s_raffleState = RaffleState.Open;
+
+        s_players = new address payable[](0);
 
         (bool isSuccess,) = recentWinner.call{value: address(this).balance}('');
 
