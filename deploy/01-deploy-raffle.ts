@@ -2,6 +2,7 @@ import type { DeployFunction } from 'hardhat-deploy/types'
 import type { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { developmentChainIds, networkConfig, networks } from '../helper-hardhat-config'
 import { VRFCoordinatorV2Mock } from '../typechain-types'
+import { verify } from '../verify/verify'
 
 
 const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
@@ -44,14 +45,20 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
   const args = [vrfCoordinatorV2Address, ticketPrice, gasLane, subscriptionId, callbackGasLimit, interval]
 
-  await deploy('Raffle', {
+  const raffle = await deploy('Raffle', {
     from: deployer,
     log: true,
     args,
     waitConfirmations: chainId === networks.sepolia.chainId ? 6 : 1,
   })
+
+  if (!isDevChain && process.env.ETHERSCAN_API_KEY) {
+    await verify(raffle.address, args)
+  }
+
+  log('----------------------------------------------------')
 }
 
-deployFunction.tags = ['all']
+deployFunction.tags = ['all', 'raffle']
 
 export default deployFunction
