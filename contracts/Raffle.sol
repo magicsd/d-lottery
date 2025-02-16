@@ -20,6 +20,7 @@ contract Raffle is VRFConsumerBaseV2 {
     VRFCoordinatorV2Interface private immutable I_COORDINATOR;
 
     event Enter(address indexed player);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     modifier onlyOwner() {
         if (msg.sender != I_OWNER) revert Raffle__NotOwner();
@@ -49,7 +50,7 @@ contract Raffle is VRFConsumerBaseV2 {
         emit Enter(msg.sender);
     }
 
-    function requestRandomWinner() external onlyOwner returns (address winner) {
+    function requestRandomWinner() external onlyOwner {
         uint256 requestId = I_COORDINATOR.requestRandomWords(
             I_GAS_LANE,
             I_SUBSCRIPTION_ID,
@@ -57,6 +58,8 @@ contract Raffle is VRFConsumerBaseV2 {
             I_CALLBACK_GAS_LIMIT,
             NUM_WORDS
         );
+
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(uint256 _requestId, uint256[] memory _randomWords) internal override {
