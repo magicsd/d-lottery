@@ -1,9 +1,14 @@
 import type { DeployFunction } from 'hardhat-deploy/types'
 import type { HardhatRuntimeEnvironment } from 'hardhat/types'
+import { developmentChainIds, networkConfig, networks } from '../helper-hardhat-config'
+import { VRFCoordinatorV2Mock } from '../typechain-types'
+
 
 const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   // @ts-ignore
   const { deployments, getNamedAccounts, network, ethers } = hre
+
+  const VRF_SUBSCRIPTION_FUND_AMOUNT: bigint = ethers.parseEther('30')
 
   const { log, deploy, get } = deployments
 
@@ -15,18 +20,36 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
     throw new Error('ChainId not found')
   }
 
+  let vrfCoordinatorV2Address = networkConfig[chainId].vrfCoordinatorV2
+  let subscriptionId: bigint
+
+  const isDevChain = developmentChainIds.includes(chainId)
+
+  if (isDevChain) {
+    const vrfCoordinatorV2Mock = (await get('VRFCoordinatorV2Mock')) as VRFCoordinatorV2Mock
+    vrfCoordinatorV2Address = await vrfCoordinatorV2Mock.getAddress()
+    const txResponse = await vrfCoordinatorV2Mock.createSubscription()
+    const txReceipt = await txResponse.wait(1)
+    subscriptionId = (txReceipt as any).events[0].args.subId
+    await vrfCoordinatorV2Mock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT)
+  }
+
   log('Deploying FundMe contract...')
 
-  const vrfCoordinatorV2 = deployer
-  const ticketPrice = ethers.parseEther('1')
-  const gasLane = ''
-  const subscriptionId = process.env.VRF_SUBSCRIPTION_ID
-  const callbackGasLimit = ''
-  const interval = ''
+  const ticketPrice = networkConfig[chainId].ticketPrice
+  const gasLane = networkConfig[chainId].keyHash
+  subscriptionId = BigInt(process.env.VRF_SUBSCRIPTION_ID)
+  const callbackGasLimit = networkConfig[chainId].callbackGasLimit
+  const interval = networkConfig[chainId].interval
 
-  const args = [vrfCoordinatorV2, ticketPrice, gasLane, subscriptionId, callbackGasLimit, interval]
+  const args = [vrfCoordinatorV2Address, ticketPrice, gasLane, subscriptionId, callbackGasLimit, interval]
 
-  await deploy('Raffle', { from: deployer, log: true, args })
+  await deploy('Raffle', {
+    from: deployer,
+    log: true,
+    args,
+    waitConfirmations: chainId === networks.sepolia.chainId ? 6 : 1,
+  })
 }
 
 deployFunction.tags = ['all']

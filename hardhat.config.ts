@@ -10,15 +10,27 @@ import 'hardhat-deploy-ethers'
 import 'solidity-coverage'
 import 'dotenv/config'
 
+import { networks } from './helper-hardhat-config.ts'
+
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || ''
+const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY || ''
+const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || ''
+
 const config: HardhatUserConfig = {
   solidity: '0.8.28',
-  defaultNetwork: 'localhost',
+  defaultNetwork: 'hardhat',
+  etherscan: {
+    apiKey: ETHERSCAN_API_KEY,
+  },
   networks: {
-    // sepolia: {
-    //   url: networks.sepolia.rpcUrl,
-    //   accounts: [SEPOLIA_PRIVATE_KEY],
-    //   chainId: networks.sepolia.chainId,
-    // },
+    hardhat: {
+      chainId: networks.hardhat.chainId,
+    },
+    sepolia: {
+      url: networks.sepolia.rpcUrl,
+      accounts: [SEPOLIA_PRIVATE_KEY],
+      chainId: networks.sepolia.chainId,
+    },
     localhost: {
       url: 'http://127.0.0.1:8545/',
       chainId: 31337,
@@ -28,12 +40,15 @@ const config: HardhatUserConfig = {
     deployer: {
       default: 0,
     },
+    player: {
+      default: 1,
+    }
   },
   gasReporter: {
     enabled: true,
     offline: true,
-    // coinmarketcap: COINMARKETCAP_API_KEY,
-    // L1Etherscan: ETHERSCAN_API_KEY,
+    coinmarketcap: COINMARKETCAP_API_KEY,
+    L1Etherscan: ETHERSCAN_API_KEY,
     outputFile: 'gas-report.txt',
     noColors: true,
     currency: 'USD',
