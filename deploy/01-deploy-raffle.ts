@@ -22,16 +22,16 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
   }
 
   let vrfCoordinatorV2Address = networkConfig[chainId].vrfCoordinatorV2
-  let subscriptionId: bigint
+  let subscriptionId = BigInt(process.env.VRF_SUBSCRIPTION_ID)
 
   const isDevChain = developmentChainIds.includes(chainId)
 
   if (isDevChain) {
-    const vrfCoordinatorV2Mock = (await get('VRFCoordinatorV2Mock')) as VRFCoordinatorV2Mock
+    const vrfCoordinatorV2Mock = (await ethers.getContract('VRFCoordinatorV2Mock')) as VRFCoordinatorV2Mock
     vrfCoordinatorV2Address = await vrfCoordinatorV2Mock.getAddress()
     const txResponse = await vrfCoordinatorV2Mock.createSubscription()
-    const txReceipt = await txResponse.wait(1)
-    subscriptionId = (txReceipt as any).events[0].args.subId
+    const txReceipt = await txResponse.wait()
+    subscriptionId = (txReceipt.logs[0] as any).args[0]
     await vrfCoordinatorV2Mock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT)
   }
 
@@ -39,7 +39,6 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
   const ticketPrice = networkConfig[chainId].ticketPrice
   const gasLane = networkConfig[chainId].keyHash
-  subscriptionId = BigInt(process.env.VRF_SUBSCRIPTION_ID)
   const callbackGasLimit = networkConfig[chainId].callbackGasLimit
   const interval = networkConfig[chainId].interval
 
