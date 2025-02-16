@@ -17,7 +17,15 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
   log('Deploying FundMe contract...')
 
-  await deploy('Raffle', { from: deployer, log: true, args: [deployer, ethers.parseEther('1')] })
+  const vrfCoordinatorV2 = deployer
+  const ticketPrice = ethers.parseEther('1')
+  const gasLane = ''
+  const subscriptionId = process.env.VRF_SUBSCRIPTION_ID
+  const callbackGasLimit = ''
+
+  const args = [vrfCoordinatorV2, ticketPrice, gasLane, subscriptionId, callbackGasLimit]
+
+  await deploy('Raffle', { from: deployer, log: true, args })
 }
 
 deployFunction.tags = ['all']
