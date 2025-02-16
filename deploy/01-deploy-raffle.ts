@@ -17,7 +17,7 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
   log('Deploying FundMe contract...')
 
-  await deploy('Raffle', { from: deployer, log: true, args: [ethers.parseEther('1')] })
+  await deploy('Raffle', { from: deployer, log: true, args: [deployer, ethers.parseEther('1')] })
 }
 
 deployFunction.tags = ['all']
