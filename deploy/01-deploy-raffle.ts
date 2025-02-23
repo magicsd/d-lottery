@@ -6,12 +6,13 @@ import { verify } from '../verify/verify'
 
 
 const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
-  // @ts-ignore
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   const { deployments, getNamedAccounts, network, ethers } = hre
 
   const VRF_SUBSCRIPTION_FUND_AMOUNT: bigint = ethers.parseEther('30')
 
-  const { log, deploy, get } = deployments
+  const { log, deploy } = deployments
 
   const { deployer } = await getNamedAccounts()
 

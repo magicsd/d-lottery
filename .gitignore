@@ -14,6 +14,8 @@ dist-ssr
 
 artifacts/
 cache/
+coverage/
+coverage.json
 typechain-types/
 gas-report.txt
 deployments
