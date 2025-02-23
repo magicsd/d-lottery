@@ -1,10 +1,16 @@
-import { ethers, getNamedAccounts, deployments } from 'hardhat'
+import { ethers, getNamedAccounts, deployments, network } from 'hardhat'
 import type { Raffle } from '../../typechain-types'
 import { expect } from 'chai'
+import { developmentChainIds } from '../../helper-hardhat-config.ts'
+
+const { chainId } = network.config
+
+const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
 
 const getAmount = (value: number) => ethers.parseEther(value.toString())
 
-describe('Raffle', async () => {
+// eslint-disable-next-line @typescript-eslint/no-unused-expressions
+!isDevNetwork ? describe.skip : describe('Raffle', async () => {
   let raffle: Raffle
   let deployer: string
 
