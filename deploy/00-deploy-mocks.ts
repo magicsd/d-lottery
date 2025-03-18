@@ -21,12 +21,14 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
   const baseFee = ethers.parseEther('0.25')
   const gasPriceLink = 1e9
+  // current LINK/ETH price
+  const weiPerUnit = 7359502625961095
 
-  await deploy('VRFCoordinatorV2Mock', {
-    contract: 'VRFCoordinatorV2Mock',
+  await deploy('VRFCoordinatorV2_5Mock', {
+    contract: 'VRFCoordinatorV2_5Mock',
     from: deployer,
     log: true,
-    args: [baseFee, gasPriceLink],
+    args: [baseFee, gasPriceLink, weiPerUnit],
   })
 
   log('Mocks deployed!')

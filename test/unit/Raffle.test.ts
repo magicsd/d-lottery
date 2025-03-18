@@ -1,7 +1,8 @@
 import { ethers, getNamedAccounts, deployments, network } from 'hardhat'
-import type { Raffle, VRFCoordinatorV2Mock } from '../../typechain-types'
+import type { Raffle, VRFCoordinatorV2_5Mock } from '../../typechain-types'
 import { expect } from 'chai'
 import { developmentChainIds, networkConfig } from '../../helper-hardhat-config.ts'
+import { describe } from 'mocha'
 
 const { chainId } = network.config
 
@@ -15,7 +16,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
       let deployer: string
       let ticketPrice: string
       let interval: string
-      let vrfCoordinatorV2Mock: VRFCoordinatorV2Mock
+      let vrfCoordinatorV2_5Mock: VRFCoordinatorV2_5Mock
 
       beforeEach(async () => {
         await deployments.fixture('all')
@@ -25,7 +26,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
         raffle = await ethers.getContract('Raffle', deployer)
         ticketPrice = (await raffle.getTicketPrice()).toString()
         interval = (await raffle.getInterval()).toString()
-        vrfCoordinatorV2Mock = await ethers.getContract('VRFCoordinatorV2Mock', deployer)
+        vrfCoordinatorV2_5Mock = await ethers.getContract('VRFCoordinatorV2_5Mock', deployer)
       })
 
       describe('constructor', () => {
@@ -60,7 +61,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
           await expect(tx).to.emit(raffle, 'Enter').withArgs(deployer)
         })
 
-        it.skip('does not allow entrance when raffle is calculating', async () => {
+        it('does not allow entrance when raffle is calculating', async () => {
           await raffle.enter({ value: ticketPrice })
           await network.provider.send('evm_increaseTime', [Number(interval) + 1])
           await network.provider.send('evm_mine', [])
@@ -86,7 +87,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
           expect(upkeepNeeded).to.equal(false)
         })
 
-        it.skip('returns false if raffle is not open', async () => {
+        it('returns false if raffle is not open', async () => {
           await raffle.enter({ value: ticketPrice })
           await network.provider.send('evm_increaseTime', [Number(interval) + 1])
           await network.provider.send('evm_mine', [])
@@ -114,4 +115,11 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
           expect(upkeepNeeded).to.equal(true)
         })
       })
+
+      // describe('performUpkeep', () => {
+      //   it('can only run if upkeepNeeded is true', async () => {
+      //     await raffle.enter({ value: ticketPrice })
+      //     await network.provider.send('evm_increaseTime', [Number(interval) + 1])
+      //   })
+      // })
     })

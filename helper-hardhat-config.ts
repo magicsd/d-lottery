@@ -23,7 +23,7 @@ export const networks: Record<NetworkName, Config> = {
 type NetworkConfig = {
   name: NetworkName
   rpcUrl?: string
-  vrfCoordinatorV2: string
+  vrfCoordinatorV2_5: string
   ticketPrice: string
   keyHash: string
   callbackGasLimit: string
@@ -33,7 +33,7 @@ type NetworkConfig = {
 export const networkConfig: Record<ChainId, NetworkConfig> = {
   [networks.hardhat.chainId]: {
     name: 'hardhat',
-    vrfCoordinatorV2: '',
+    vrfCoordinatorV2_5: '',
     ticketPrice: 1e16.toString(),
     keyHash: '0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae',
     callbackGasLimit: '500000',
@@ -41,7 +41,7 @@ export const networkConfig: Record<ChainId, NetworkConfig> = {
   },
   [networks.sepolia.chainId]: {
     name: 'sepolia',
-    vrfCoordinatorV2: '0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B',
+    vrfCoordinatorV2_5: '0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B',
     ticketPrice: 1e16.toString(),
     keyHash: '0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae',
     callbackGasLimit: '500000',

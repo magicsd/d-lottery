@@ -17,7 +17,9 @@ const SEPOLIA_PRIVATE_KEY = process.env.SEPOLIA_PRIVATE_KEY || ''
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || ''
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.28',
+  solidity: {
+    compilers: [{ version: '0.8.28' }, { version: '0.8.19' }],
+  },
   defaultNetwork: 'hardhat',
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
@@ -42,7 +44,7 @@ const config: HardhatUserConfig = {
     },
     player: {
       default: 1,
-    }
+    },
   },
   gasReporter: {
     enabled: true,
