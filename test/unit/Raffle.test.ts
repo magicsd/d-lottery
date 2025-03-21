@@ -16,7 +16,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
       let deployer: string
       let ticketPrice: string
       let interval: string
-      let vrfCoordinatorV2_5Mock: VRFCoordinatorV2_5Mock
+      // let vrfCoordinatorV2_5Mock: VRFCoordinatorV2_5Mock
 
       beforeEach(async () => {
         await deployments.fixture('all')
@@ -26,7 +26,7 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
         raffle = await ethers.getContract('Raffle', deployer)
         ticketPrice = (await raffle.getTicketPrice()).toString()
         interval = (await raffle.getInterval()).toString()
-        vrfCoordinatorV2_5Mock = await ethers.getContract('VRFCoordinatorV2_5Mock', deployer)
+        // vrfCoordinatorV2_5Mock = await ethers.getContract('VRFCoordinatorV2_5Mock', deployer)
       })
 
       describe('constructor', () => {
@@ -92,8 +92,8 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
           await network.provider.send('evm_increaseTime', [Number(interval) + 1])
           await network.provider.send('evm_mine', [])
           await raffle.performUpkeep('0x')
-          const raffleState = await raffle.getRaffleState()
 
+          const raffleState = await raffle.getRaffleState()
           expect(raffleState.toString()).to.equal('1')
 
           const { upkeepNeeded } = await raffle.checkUpkeep.staticCall('0x')
@@ -101,14 +101,21 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
           expect(upkeepNeeded).to.equal(false)
         })
 
-        it.skip('returns true of enough time has passes, has players and is open', async () => {
+        it('returns false if not enough time has passed', async () => {
+          await raffle.enter({ value: ticketPrice })
+
+          const { upkeepNeeded } = await raffle.checkUpkeep.staticCall('0x')
+
+          expect(upkeepNeeded).to.equal(false)
+        })
+
+        it('returns true if enough time has passed, has players and is open', async () => {
           await raffle.enter({ value: ticketPrice })
           await network.provider.send('evm_increaseTime', [Number(interval) + 1])
           await network.provider.send('evm_mine', [])
-          await raffle.performUpkeep('0x')
-          const raffleState = await raffle.getRaffleState()
 
-          expect(raffleState.toString()).to.equal('1')
+          const raffleState = await raffle.getRaffleState()
+          expect(raffleState.toString()).to.equal('0')
 
           const { upkeepNeeded } = await raffle.checkUpkeep.staticCall('0x')
 
@@ -116,10 +123,44 @@ const isDevNetwork = chainId ? developmentChainIds.includes(chainId) : false
         })
       })
 
-      // describe('performUpkeep', () => {
-      //   it('can only run if upkeepNeeded is true', async () => {
-      //     await raffle.enter({ value: ticketPrice })
-      //     await network.provider.send('evm_increaseTime', [Number(interval) + 1])
-      //   })
-      // })
+      describe('performUpkeep', () => {
+        it('can only run if upkeepNeeded is true', async () => {
+          await raffle.enter({ value: ticketPrice })
+          await network.provider.send('evm_increaseTime', [Number(interval) + 1])
+          await network.provider.send('evm_mine', [])
+
+          const tx = await raffle.performUpkeep('0x')
+
+          await expect(tx).to.emit(raffle, 'RequestedRaffleWinner')
+        })
+
+        it('should revert if not enough time has passed', async () => {
+          await raffle.enter({ value: ticketPrice })
+
+          const balance = await ethers.provider.getBalance(raffle)
+          const playersCount = await raffle.getNumberOfPlayers()
+          const raffleState = await raffle.getRaffleState()
+
+          const tx = raffle.performUpkeep('0x')
+
+          await expect(tx).to.be.revertedWithCustomError(
+            raffle,
+            'Raffle__UpkeepNotNeeded'
+          ).withArgs(balance, playersCount, raffleState)
+        })
+
+        it('should request a random number', async () => {
+          await raffle.enter({ value: ticketPrice })
+          await network.provider.send('evm_increaseTime', [Number(interval) + 1])
+          await network.provider.send('evm_mine', [])
+
+          const txResponse = await raffle.performUpkeep('0x')
+          const txReceipt = await txResponse.wait(1)
+
+          const requestId = (txReceipt?.logs[1] as any).args[0]
+
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+          expect(requestId > 0).to.be.true
+        })
+      })
     })
