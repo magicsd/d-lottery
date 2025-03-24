@@ -3,7 +3,7 @@ import type { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { developmentChainIds, networkConfig, networks } from '../helper-hardhat-config'
 import { VRFCoordinatorV2_5Mock } from '../typechain-types'
 import { verify } from '../verify/verify'
-
+import { type EventLog } from 'ethers'
 
 const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -35,12 +35,17 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
     vrfCoordinatorV2_5Address = await vrfCoordinatorV2_5Mock.getAddress()
 
     const txResponse = await vrfCoordinatorV2_5Mock.createSubscription()
-    const txReceipt = await txResponse.wait()
-    subscriptionId = (txReceipt?.logs[0] as any).args[0]
+    const txReceipt = await txResponse.wait(1)
+    const event = txReceipt.logs.find((log) => (log as EventLog).fragment?.name === 'SubscriptionCreated') as
+      | EventLog
+      | undefined
+
+    subscriptionId = event?.args[0]
+
     await vrfCoordinatorV2_5Mock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT)
   }
 
-  log('Deploying FundMe contract...')
+  log('Deploying Raffle contract...')
 
   const ticketPrice = networkConfig[chainId].ticketPrice
   const gasLane = networkConfig[chainId].keyHash
@@ -56,13 +61,17 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
     waitConfirmations: chainId === networks.sepolia.chainId ? 6 : 1,
   })
 
-  if (isDevChain) {
-    await vrfCoordinatorV2_5Mock.addConsumer(subscriptionId, raffle.address)
-  }
+  await vrfCoordinatorV2_5Mock.addConsumer(subscriptionId, raffle.address)
 
   if (!isDevChain && process.env.ETHERSCAN_API_KEY) {
     await verify(raffle.address, args)
   }
+
+  const sub = await vrfCoordinatorV2_5Mock.getSubscription(subscriptionId)
+  console.log('Subscription native balance:', sub[0].toString())
+
+  const vrfCoordinatorBalance = await ethers.provider.getBalance(await vrfCoordinatorV2_5Mock.getAddress())
+  console.log('VRFCoordinator Balance:', vrfCoordinatorBalance.toString())
 
   log('----------------------------------------------------')
 }

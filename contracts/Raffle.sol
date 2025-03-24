@@ -104,7 +104,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         );
 
         // RandomNumberRequested of coordinator is emitted, so this one is redundant
-        emit RequestedRaffleWinner(requestId); 
+        emit RequestedRaffleWinner(requestId);
     }
 
     function fulfillRandomWords(uint256 /* _requestId, */, uint256[] calldata _randomWords) internal override {
