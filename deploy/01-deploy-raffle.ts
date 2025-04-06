@@ -42,7 +42,9 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
 
     subscriptionId = event?.args[0]
 
-    await vrfCoordinatorV2_5Mock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT)
+    await vrfCoordinatorV2_5Mock.fundSubscription(subscriptionId, VRF_SUBSCRIPTION_FUND_AMOUNT, {
+      value: VRF_SUBSCRIPTION_FUND_AMOUNT,
+    })
   }
 
   log('Deploying Raffle contract...')
@@ -68,9 +70,10 @@ const deployFunction: DeployFunction = async (hre: HardhatRuntimeEnvironment) =>
   }
 
   const sub = await vrfCoordinatorV2_5Mock.getSubscription(subscriptionId)
-  console.log('Subscription native balance:', sub[0].toString())
+  console.log('Subscription balance:', sub.balance.toString())
+  console.log('Subscription native balance:', sub.nativeBalance.toString())
 
-  const vrfCoordinatorBalance = await ethers.provider.getBalance(await vrfCoordinatorV2_5Mock.getAddress())
+  const vrfCoordinatorBalance = await ethers.provider.getBalance(vrfCoordinatorV2_5Address)
   console.log('VRFCoordinator Balance:', vrfCoordinatorBalance.toString())
 
   log('----------------------------------------------------')
